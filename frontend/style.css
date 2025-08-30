@@ -24,6 +24,24 @@
     --welcome-border: #2563eb;
 }
 
+/* Light Theme Variables */
+:root.light-theme {
+    --primary-color: #1d4ed8;
+    --primary-hover: #1e40af;
+    --background: #ffffff;
+    --surface: #f8fafc;
+    --surface-hover: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --border-color: #cbd5e1;
+    --user-message: #1d4ed8;
+    --assistant-message: #f1f5f9;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+    --focus-ring: rgba(29, 78, 216, 0.3);
+    --welcome-bg: #eff6ff;
+    --welcome-border: #3b82f6;
+}
+
 /* Base Styles */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -34,6 +52,7 @@ body {
     overflow: hidden;
     margin: 0;
     padding: 0;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Container - Full Screen */
@@ -52,6 +71,7 @@ header {
     border-bottom: 1px solid var(--border-color);
     padding: 1rem 2rem;
     flex-shrink: 0;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 header h1 {
@@ -74,6 +94,72 @@ header h1 {
 
 .header-title {
     flex: 1;
+}
+
+.header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.theme-toggle-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.theme-toggle-button:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.theme-toggle-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.theme-toggle-button:active {
+    transform: translateY(0);
+}
+
+.theme-toggle-button .sun-icon,
+.theme-toggle-button .moon-icon {
+    position: absolute;
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+.theme-toggle-button .sun-icon {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+}
+
+.theme-toggle-button .moon-icon {
+    opacity: 0;
+    transform: rotate(180deg) scale(0.8);
+}
+
+:root.light-theme .theme-toggle-button .sun-icon {
+    opacity: 0;
+    transform: rotate(-180deg) scale(0.8);
+}
+
+:root.light-theme .theme-toggle-button .moon-icon {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
 }
 
 .new-chat-button {
@@ -129,6 +215,7 @@ header h1 {
     padding: 1.5rem;
     overflow-y: auto;
     flex-shrink: 0;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 /* Custom Scrollbar for Sidebar */
@@ -386,12 +473,38 @@ header h1 {
     color: var(--text-secondary);
 }
 
+/* Light theme specific code styling */
+:root.light-theme .message-content code {
+    background-color: rgba(0, 0, 0, 0.06);
+    color: #1a202c;
+}
+
+:root.light-theme .message-content pre {
+    background-color: rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--border-color);
+}
+
+:root.light-theme .message-content blockquote {
+    color: var(--text-secondary);
+    background-color: rgba(29, 78, 216, 0.03);
+    border-left: 3px solid var(--primary-color);
+    padding: 0.5rem 1rem;
+    border-radius: 0 4px 4px 0;
+}
+
 /* Welcome message special styling */
 .message.welcome-message .message-content {
     background: var(--surface);
     border: 2px solid var(--border-color);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     position: relative;
+}
+
+/* Light theme welcome message */
+:root.light-theme .message.welcome-message .message-content {
+    background: var(--welcome-bg);
+    border: 2px solid var(--welcome-border);
+    box-shadow: 0 4px 16px rgba(29, 78, 216, 0.08);
 }
 
 .message-content strong {
@@ -525,6 +638,19 @@ header h1 {
     border-radius: 8px;
     border: 1px solid rgba(34, 197, 94, 0.2);
     margin: 0.5rem 0;
+}
+
+/* Light theme specific message styling */
+:root.light-theme .error-message {
+    background: rgba(220, 38, 38, 0.08);
+    color: #dc2626;
+    border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+:root.light-theme .success-message {
+    background: rgba(22, 163, 74, 0.08);
+    color: #16a34a;
+    border: 1px solid rgba(22, 163, 74, 0.2);
 }
 
 /* Sidebar Headers */
@@ -763,8 +889,17 @@ details[open] .suggested-header::before {
         gap: 1rem;
     }
     
-    .new-chat-button {
+    .header-buttons {
         align-self: flex-end;
+        gap: 0.5rem;
+    }
+    
+    .theme-toggle-button {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .new-chat-button {
         padding: 0.625rem 1rem;
         font-size: 0.8rem;
     }
