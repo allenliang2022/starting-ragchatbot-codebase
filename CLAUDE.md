@@ -39,6 +39,41 @@ uv add package-name
 uv run python filename.py
 ```
 
+### Code Quality Tools
+
+Install development dependencies (includes Black, Ruff, MyPy, isort):
+```cmd
+uv sync --extra dev
+```
+
+Format code automatically:
+```cmd
+format.bat
+```
+
+Run comprehensive quality checks:
+```cmd
+quality.bat
+```
+
+Individual quality commands:
+```cmd
+# Format code with Black
+uv run black backend/ main.py
+
+# Sort imports with isort  
+uv run isort backend/ main.py
+
+# Lint with Ruff
+uv run ruff check backend/ main.py
+
+# Type check with MyPy
+uv run mypy backend/ main.py
+
+# Run tests
+uv run pytest backend/tests/
+```
+
 ## Architecture
 
 ### Core Components
