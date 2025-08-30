@@ -3,7 +3,7 @@ from chromadb.config import Settings
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from models import Course, CourseChunk
-from sentence_transformers import SentenceTransformer
+from openai import OpenAI
 
 @dataclass
 class SearchResults:
@@ -31,10 +31,29 @@ class SearchResults:
         """Check if results are empty"""
         return len(self.documents) == 0
 
+class OpenAIEmbeddingFunction:
+    """Custom embedding function using OpenAI API"""
+    
+    def __init__(self, model: str, api_key: str, base_url: str):
+        self.client = OpenAI(api_key=api_key, base_url=base_url)
+        self.model = model
+    
+    def __call__(self, input: List[str]) -> List[List[float]]:
+        """Generate embeddings for a list of texts"""
+        response = self.client.embeddings.create(
+            input=input,
+            model=self.model
+        )
+        return [data.embedding for data in response.data]
+    
+    def name(self) -> str:
+        """Return the name of this embedding function for ChromaDB compatibility"""
+        return f"openai_{self.model}"
+
 class VectorStore:
     """Vector storage using ChromaDB for course content and metadata"""
     
-    def __init__(self, chroma_path: str, embedding_model: str, max_results: int = 5):
+    def __init__(self, chroma_path: str, embedding_model: str, api_key: str, base_url: str, max_results: int = 5):
         self.max_results = max_results
         # Initialize ChromaDB client
         self.client = chromadb.PersistentClient(
@@ -42,9 +61,11 @@ class VectorStore:
             settings=Settings(anonymized_telemetry=False)
         )
         
-        # Set up sentence transformer embedding function
-        self.embedding_function = chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name=embedding_model
+        # Set up OpenAI embedding function
+        self.embedding_function = OpenAIEmbeddingFunction(
+            model=embedding_model,
+            api_key=api_key,
+            base_url=base_url
         )
         
         # Create collections for different types of data

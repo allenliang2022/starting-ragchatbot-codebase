@@ -8,12 +8,13 @@ load_dotenv()
 @dataclass
 class Config:
     """Configuration settings for the RAG system"""
-    # Anthropic API settings
-    ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
-    ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
+    # DeepSeek API settings
+    DEEPSEEK_API_KEY: str = os.getenv("DEEPSEEK_API_KEY", "dummy")
+    DEEPSEEK_MODEL: str = "gpt-5"
+    DEEPSEEK_BASE_URL: str = "http://localhost:4141/v1"
     
     # Embedding model settings
-    EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
+    EMBEDDING_MODEL: str = "text-embedding-3-small"
     
     # Document processing settings
     CHUNK_SIZE: int = 800       # Size of text chunks for vector storage

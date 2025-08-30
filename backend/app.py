@@ -1,19 +1,25 @@
 import warnings
 warnings.filterwarnings("ignore", message="resource_tracker: There appear to be.*")
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import os
+import logging
+import traceback
 
 from config import config
 from rag_system import RAGSystem
 
-# Initialize FastAPI app
-app = FastAPI(title="Course Materials RAG System", root_path="")
+# Initialize FastAPI app with debug mode
+app = FastAPI(title="Course Materials RAG System", root_path="", debug=True)
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Add trusted host middleware for proxy
 app.add_middleware(
@@ -33,6 +39,15 @@ app.add_middleware(
 
 # Initialize RAG system
 rag_system = RAGSystem(config)
+
+# Global exception handler for detailed error logging
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch all unhandled exceptions and log detailed information"""
+    error_traceback = traceback.format_exc()
+    logger.error(f"Unhandled exception at {request.url}:\n{error_traceback}")
+    print(f"ERROR: Unhandled exception at {request.url}:\n{error_traceback}")
+    return HTTPException(status_code=500, detail=f"Internal server error: {str(exc)}")
 
 # Pydantic models for request/response
 class QueryRequest(BaseModel):
@@ -57,13 +72,21 @@ class CourseStats(BaseModel):
 async def query_documents(request: QueryRequest):
     """Process a query and return response with sources"""
     try:
+        logger.info(f"Processing query: {request.query}")
+        print(f"DEBUG: Processing query: {request.query}")
+        
         # Create session if not provided
         session_id = request.session_id
         if not session_id:
+            logger.debug("Creating new session")
             session_id = rag_system.session_manager.create_session()
+            print(f"DEBUG: Created session: {session_id}")
         
         # Process query using RAG system
+        logger.debug(f"Calling RAG system with query: {request.query}, session: {session_id}")
+        print(f"DEBUG: About to call rag_system.query()")
         answer, sources = rag_system.query(request.query, session_id)
+        print(f"DEBUG: RAG system returned answer: {answer[:100]}..., sources: {sources}")
         
         return QueryResponse(
             answer=answer,
@@ -71,7 +94,10 @@ async def query_documents(request: QueryRequest):
             session_id=session_id
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        error_traceback = traceback.format_exc()
+        logger.error(f"Error in query_documents: {error_traceback}")
+        print(f"ERROR in query_documents: {error_traceback}")
+        raise HTTPException(status_code=500, detail=f"Query processing error: {str(e)}")
 
 @app.get("/api/courses", response_model=CourseStats)
 async def get_course_stats():

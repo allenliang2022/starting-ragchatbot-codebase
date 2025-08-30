@@ -1,6 +1,7 @@
 from typing import Dict, Any, Optional, Protocol
 from abc import ABC, abstractmethod
 from vector_store import VectorStore, SearchResults
+import json
 
 
 class Tool(ABC):
@@ -108,10 +109,104 @@ class CourseSearchTool(Tool):
             
             formatted.append(f"{header}\n{doc}")
         
-        # Store sources for retrieval
-        self.last_sources = sources
+        # Remove duplicate sources while preserving order
+        unique_sources = []
+        seen = set()
+        for source in sources:
+            if source not in seen:
+                unique_sources.append(source)
+                seen.add(source)
+        
+        # Store unique sources for retrieval
+        self.last_sources = unique_sources
         
         return "\n\n".join(formatted)
+
+
+class CourseOutlineTool(Tool):
+    """Tool for getting course outlines with lesson information"""
+    
+    def __init__(self, vector_store: VectorStore):
+        self.store = vector_store
+        self.last_sources = []  # Track sources from last search
+    
+    def get_tool_definition(self) -> Dict[str, Any]:
+        """Return Anthropic tool definition for this tool"""
+        return {
+            "name": "get_course_outline",
+            "description": "Get course outline with course title, course link, and complete lesson list",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "course_title": {
+                        "type": "string",
+                        "description": "Course title (partial matches work, e.g. 'MCP', 'Introduction')"
+                    }
+                },
+                "required": ["course_title"]
+            }
+        }
+    
+    def execute(self, course_title: str) -> str:
+        """
+        Execute the course outline tool.
+        
+        Args:
+            course_title: Course title to get outline for
+            
+        Returns:
+            Formatted course outline or error message
+        """
+        
+        # Step 1: Resolve course name
+        resolved_title = self.store._resolve_course_name(course_title)
+        if not resolved_title:
+            return f"No course found matching '{course_title}'"
+        
+        # Step 2: Get course metadata
+        all_courses = self.store.get_all_courses_metadata()
+        course_metadata = None
+        for course in all_courses:
+            if course.get('title') == resolved_title:
+                course_metadata = course
+                break
+        
+        if not course_metadata:
+            return f"Course metadata not found for '{resolved_title}'"
+        
+        # Step 3: Format the outline
+        return self._format_outline(course_metadata)
+    
+    def _format_outline(self, course_metadata: Dict[str, Any]) -> str:
+        """Format course outline with all lesson information"""
+        title = course_metadata.get('title', 'Unknown Course')
+        instructor = course_metadata.get('instructor', 'Unknown Instructor')
+        course_link = course_metadata.get('course_link', '')
+        lessons = course_metadata.get('lessons', [])
+        
+        # Track source for the UI
+        self.last_sources = [title]
+        
+        # Build formatted outline
+        outline = f"**Course:** {title}\n"
+        if instructor and instructor != 'Unknown Instructor':
+            outline += f"**Instructor:** {instructor}\n"
+        if course_link:
+            outline += f"**Course Link:** {course_link}\n"
+        
+        outline += f"\n**Lessons ({len(lessons)} total):**\n"
+        
+        for lesson in lessons:
+            lesson_num = lesson.get('lesson_number', 'Unknown')
+            lesson_title = lesson.get('lesson_title', 'Untitled Lesson')
+            lesson_link = lesson.get('lesson_link', '')
+            
+            outline += f"{lesson_num}. {lesson_title}"
+            if lesson_link:
+                outline += f" - [Link]({lesson_link})"
+            outline += "\n"
+        
+        return outline
 
 class ToolManager:
     """Manages available tools for the AI"""

@@ -5,7 +5,7 @@ const API_URL = '/api';
 let currentSessionId = null;
 
 // DOM elements
-let chatMessages, chatInput, sendButton, totalCourses, courseTitles;
+let chatMessages, chatInput, sendButton, totalCourses, courseTitles, newChatButton;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sendButton = document.getElementById('sendButton');
     totalCourses = document.getElementById('totalCourses');
     courseTitles = document.getElementById('courseTitles');
+    newChatButton = document.getElementById('newChatButton');
     
     setupEventListeners();
     createNewSession();
@@ -29,6 +30,8 @@ function setupEventListeners() {
         if (e.key === 'Enter') sendMessage();
     });
     
+    // New Chat button
+    newChatButton.addEventListener('click', createNewSession);
     
     // Suggested questions
     document.querySelectorAll('.suggested-item').forEach(button => {
@@ -37,6 +40,24 @@ function setupEventListeners() {
             chatInput.value = question;
             sendMessage();
         });
+    });
+    
+    // Source links event delegation
+    chatMessages.addEventListener('click', (e) => {
+        if (e.target.classList.contains('source-link')) {
+            const sourceName = e.target.getAttribute('data-source');
+            const question = `Tell me more about "${sourceName}"`;
+            chatInput.value = question;
+            sendMessage();
+        }
+    });
+    
+    // Source links keyboard navigation
+    chatMessages.addEventListener('keydown', (e) => {
+        if (e.target.classList.contains('source-link') && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            e.target.click();
+        }
     });
 }
 
@@ -122,10 +143,14 @@ function addMessage(content, type, sources = null, isWelcome = false) {
     let html = `<div class="message-content">${displayContent}</div>`;
     
     if (sources && sources.length > 0) {
+        const sourceLinks = sources.map((source, index) => 
+            `<button class="source-link" data-source="${escapeHtml(source)}" tabindex="0">${escapeHtml(source)}</button>`
+        ).join('');
+        
         html += `
             <details class="sources-collapsible">
                 <summary class="sources-header">Sources</summary>
-                <div class="sources-content">${sources.join(', ')}</div>
+                <div class="sources-content">${sourceLinks}</div>
             </details>
         `;
     }
